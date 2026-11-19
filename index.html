@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mi IA</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 0 auto; padding: 16px; }
+    #chat { min-height: 300px; margin-bottom: 12px; }
+    .msg { padding: 8px 12px; margin: 6px 0; border-radius: 10px; white-space: pre-wrap; }
+    .user { background: #e8f0fe; }
+    .ia { background: #f1f1f1; }
+    #fila { display: flex; gap: 8px; }
+    #input { flex: 1; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Mi IA</h1>
+  <div id="chat"></div>
+  <div id="fila">
+    <input id="input" placeholder="Escribe algo..." />
+    <button id="btn">Enviar</button>
+  </div>
+
+<script>
+const WORKER_URL = "https://mi-ia.tu-cuenta.workers.dev"; // pon la tuya
+const historial = [];
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+
+function agregar(texto, clase) {
+  const d = document.createElement("div");
+  d.className = "msg " + clase;
+  d.textContent = texto;
+  chat.appendChild(d);
+  return d;
+}
+
+async function enviar() {
+  const texto = input.value.trim();
+  if (!texto) return;
+  input.value = "";
+  agregar(texto, "user");
+  historial.push({ role: "user", content: texto });
+
+  const burbuja = agregar("Pensando...", "ia");
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: historial }),
+    });
+    const data = await res.json();
+    burbuja.textContent = data.text;
+    historial.push({ role: "assistant", content: data.text });
+  } catch (e) {
+    burbuja.textContent = "Error de conexión.";
+  }
+}
+
+document.getElementById("btn").onclick = enviar;
+input.addEventListener("keydown", (e) => { if (e.key === "Enter") enviar(); });
+</script>
+</body>
+</html>
